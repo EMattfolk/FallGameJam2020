@@ -1,37 +1,31 @@
 import discord
-
-games = {}
+from room import get_rooms
 
 def f(text):
     """ Put backticks around string """
     return "```{}```".format(text)
 
-class Room():
-
-    def __init__(self, desc):
-        self.desc = desc
+games = {}
 
 class Game():
 
     def __init__(self):
-        self.rooms = {}
-        self.rooms["start"] = Room(
-            "You find yourself in a pitch black room. The door behind you slammed shut as you walked in. What do you do?"
-        )
-
+        self.rooms = get_rooms()
         self.current_room = "start"
-        self.time_passed = 0
-
-        self.state_text = ""
 
     def update(self):
-        if self.time_passed == 0:
-            self.state_text = "Your adventure begins.\n"
+        room = self.rooms[self.current_room]
+        self.state_text = room.view()
 
-        self.state_text += "\n{}".format(self.rooms[self.current_room].desc)
+        if room.actions():
+            self.state_text += "\n"
+
+        for emoji, (desc, action) in room.actions().items():
+            self.state_text += "\n{} {}".format(emoji, desc)
 
     def get_state_text(self):
         return f(self.state_text)
+
 
 class MyClient(discord.Client):
     async def on_ready(self):
