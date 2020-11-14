@@ -63,13 +63,15 @@ class Game():
 class MyClient(discord.Client):
     async def on_ready(self):
         print('Logged on as', self.user)
+        await self.change_presence(activity=discord.Game("$adventure"))
+
 
     async def on_message(self, message):
         # Don't respond to ourselves
         if message.author == self.user:
             return
 
-        if message.content == "!adventure":
+        if message.content == "$adventure":
             new_game = Game()
             game_msg = await message.channel.send("Starting game...")
 
