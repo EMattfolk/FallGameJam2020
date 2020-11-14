@@ -1,10 +1,12 @@
 import discord
 
 from asyncio import sleep
+from random import choice
 
 from room import get_rooms
+from emoji import fish
 
-def f(text):
+def code_block(text):
     """ Put backticks around string """
     return "```{}```".format(text)
 
@@ -14,33 +16,39 @@ class Game():
 
     def __init__(self):
         self.rooms = get_rooms()
-        self.current_room = "start"
+        self.current_room = "pond"
+
+        # Fishing stuff
         self.fishing = False
+        self.fish_left = fish.copy()
+        self.pond_fish = None
+        self.hooked_fish = None
+        self.current_fish = None
 
     def view_game(self):
         room = self.rooms[self.current_room]
-        state_text = f(room.view())
-
-        #if not room.actions():
-        #    return state_text
+        state_text = code_block(room.view(self))
 
         state_text += "--------------------------------"
-        for emoji, (desc, action) in room.actions().items():
+        for emoji, (desc, action) in room.actions(self).items():
             state_text += "\n{} {}".format(emoji, desc)
         state_text += "\n--------------------------------"
 
         return state_text
 
     def get_state_reactions(self):
-        return list(self.rooms[self.current_room].actions().keys())
+        return list(self.rooms[self.current_room].actions(self).keys())
 
     def get_actions_for_emoji(self, emoji):
         """
         Return actions as tuples
         """
-        _, actions = self.rooms[self.current_room].actions()[emoji]
+        _, actions = self.rooms[self.current_room].actions(self)[emoji]
         for action in actions.split():
             yield action.split("->")
+
+    def get_room_state(self):
+        return self.rooms[self.current_room].state
 
     def set_room_state(self, state):
         self.rooms[self.current_room].state = state
@@ -85,6 +93,33 @@ class MyClient(discord.Client):
                     await sleep(int(value))
                 elif action == "display":
                     await self.display_game(game, reaction.message)
+                elif action == "fishing":
+                    if value == "start":
+                        game.fishing = True
+                        game.hooked_fish = None
+                        if game.fish_left:
+                            game.pond_fish = choice(game.fish_left)
+                            game.fish_left.remove(game.pond_fish)
+                        else:
+                            game.pond_fish = None
+                    elif value == "check":
+                        # Hooked within last second or out of fish
+                        if not game.fishing or \
+                           (game.pond_fish is None and not game.fish_left):
+                            if game.get_room_state() == "fishing-bite":
+                                game.hooked_fish = game.pond_fish
+                            else:
+                                game.hooked_fish = None
+                            game.set_room_state("fishing-done")
+                            break
+                    elif value == "hook":
+                        game.fishing = False
+                        return
+                    elif value == "keep":
+                        game.current_fish = game.hooked_fish
+                    elif value == "finish":
+                        if game.hooked_fish is None and game.pond_fish is not None:
+                            game.fish_left.append(game.pond_fish)
 
             await self.display_game(game, reaction.message)
 

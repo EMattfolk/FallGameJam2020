@@ -8,14 +8,14 @@ class Room():
 
         self.state = "init"
 
-    def view(self):
-        return self._view(self.state)
+    def view(self, game):
+        return self._view(self.state, game)
 
-    def actions(self):
-        return self._actions(self.state)
+    def actions(self, game):
+        return self._actions(self.state, game)
 
 
-def start_view(state):
+def start_view(state, game):
     if state == "init":
         return "Your adventure begins.\n\nYou find yourself in a pitch black room. The door behind you slammed shut as you walked in. What do you do?"
     elif state == "try":
@@ -25,7 +25,7 @@ def start_view(state):
     elif state == "retry":
         return "You reach for the handle once more, but the rusted pathetic handle laying on the floor will not be opening that door anytime soon."
 
-def start_actions(state):
+def start_actions(state, game):
     if state == "init":
         return {
             key1: ("Try opening the door", "state->try"),
@@ -45,7 +45,7 @@ def start_actions(state):
         }
 
 
-def corridor_view(state):
+def corridor_view(state, game):
     if state == "init":
         return "The handle withstands your attempt to open the heavy metal door.\n\nAnother room opens up in front of you, a long corridor with the same beige walls stretches far, and at the end: another door.\n\nThe lack of lights in the corridor disturbs you."
     elif state.startswith("middle"):
@@ -61,7 +61,7 @@ def corridor_view(state):
 
         return text
 
-def corridor_actions(state):
+def corridor_actions(state, game):
 
     if state == "init":
         return {
@@ -83,15 +83,19 @@ def corridor_actions(state):
         return {}
 
 
-def pond_view(state):
+def pond_view(state, game):
     if state == "init":
         return "Breaking into an adrenaline fueled sprint you somehow make it to the other end of the corridor. Suddenly you find yourself in a larger room and, after catching your breath, have a look around.\n\nIn the middle of the room is a large pond with fish swimming around. It looks to be quite deep, and at the bottom a light emanates toward the surface, lighting up the room. A fishing pole lay beside the pond. Perhaps you could try your luck?"
     elif state == "look":
         return "In the middle of one of the walls is a safe. It has a keypad beside it and the display seems to indicate the code consists of 4 numbers. You have no idea what the code might be, but randomly trying different combinations couldn't hurt right? Perhaps there is a clue somewhere..\n\nThere is also the door leading back to the corridor. You have a feeling going back is not a good idea yet."
     elif state == "default":
         return "You are in the room with the pond. What do you want to do?"
+    elif state in ["fishing-wait", "fishing-bite"]:
+        return "You pick up the fishing pole and throw it into the pond.\n\nThe bobber hits the water with a splash."
+    elif state == "fishing-done":
+        return "Current: {} Hooked: {}".format(game.current_fish, game.hooked_fish)
 
-def pond_actions(state):
+def pond_actions(state, game):
     if state == "init":
         return {
             magnifying_glass: ("Look around some more", "state->look"),
@@ -100,8 +104,27 @@ def pond_actions(state):
         return {
             left_arrow: ("Return to corridor", "room->corridor"),
             safe: ("Open the safe", "state->default"),
-            fish: ("Fish", "state->default"),
+            fishing_pole: ("Fish", "fishing->start state->fishing-wait display-> sleep->6 fishing->check state->fishing-bite display-> sleep->2 fishing->check state->fishing-done"),
         }
+    elif state == "fishing-wait":
+        return {
+            hourglass: ("Reel in", "fishing->hook"),
+        }
+    elif state == "fishing-bite":
+        if game.pond_fish is not None:
+            return {
+                game.pond_fish: ("Reel in", "fishing->hook"),
+            }
+        else:
+            return {
+                hourglass: ("Reel in", "fishing->hook"),
+            }
+    elif state == "fishing-done":
+        return {
+            accept: ("Bring fish", "fishing->keep fishing->finish state->default"),
+            decline: ("Leave fish", "fishing->finish state->default"),
+        }
+
 
 def get_rooms():
     return {
