@@ -37,20 +37,36 @@ def start_actions(state):
     elif state == "default":
         return {
             "🗝": ("Try opening the door (again)", "state->retry"),
-            "🔑": ("Try opening the other door",   "room->corridor"),
+            "🔑": ("Try opening the other door", "room->corridor"),
         }
     elif state == "retry":
         return {
-            "🔑": ("Try opening the other door",   "room->corridor"),
+            "🔑": ("Try opening the other door", "state->default room->corridor"),
         }
 
 
 def corridor_view(state):
     if state == "init":
         return "The handle withstands your attempt to open the heavy metal door.\n\nAnother room opens up in front of you, a long corridor with the same beige walls stretches far, and at the end: another door.\n\nThe lack of lights in the corridor disturbs you."
+    elif state.startswith("middle"):
+        frame = int(state[6])
+        text = "You begin walking through the corridor."
+
+        if frame > 0:
+            text += "\n\nThe door ahead is not coming any closer. Huh?"
+
+        return text
 
 def corridor_actions(state):
-    return {}
+
+    if state == "init":
+        return {
+            "⬅": ("To cube room", "room->start"),
+            "🚶‍♂️": ("Walk", "state->middle0 display-> sleep->3 state->middle1"),
+        }
+    else:
+        return {}
+
 
 rooms = {
     "start": Room(start_view, start_actions),

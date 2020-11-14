@@ -1,4 +1,7 @@
 import discord
+
+from asyncio import sleep
+
 from room import get_rooms
 
 def f(text):
@@ -12,6 +15,7 @@ class Game():
     def __init__(self):
         self.rooms = get_rooms()
         self.current_room = "start"
+        self.fishing = False
 
     def view_game(self):
         room = self.rooms[self.current_room]
@@ -28,25 +32,20 @@ class Game():
     def get_state_reactions(self):
         return list(self.rooms[self.current_room].actions().keys())
 
-    def execute_actions_for_emoji(self, emoji):
-        desc, actions = self.rooms[self.current_room].actions()[emoji]
-        self.execute_actions(actions)
-
-    def execute_actions(self, actions):
+    def get_actions_for_emoji(self, emoji):
         """
-        Carry out the action. Actions are of the form:
-        <actions>: <action> <action> ...
-        <action>: <item>-><name>
-        <item>: state|room
-        <name>: any string
+        Return actions as tuples
         """
+        _, actions = self.rooms[self.current_room].actions()[emoji]
         for action in actions.split():
-            item, name = action.split("->")
+            print(action.split("->"))
+            yield action.split("->")
 
-            if item == "state":
-                self.rooms[self.current_room].state = name
-            elif item == "room":
-                self.current_room = name
+    def set_room_state(self, state):
+        self.rooms[self.current_room].state = state
+
+    def set_room(self, room):
+        self.current_room = room
 
 
 class MyClient(discord.Client):
@@ -78,14 +77,24 @@ class MyClient(discord.Client):
         emoji = str(reaction.emoji)
 
         if emoji in game.get_state_reactions():
-            game.execute_actions_for_emoji(emoji)
+            for action, value in game.get_actions_for_emoji(emoji):
+                if action == "state":
+                    game.set_room_state(value)
+                elif action == "room":
+                    game.set_room(value)
+                elif action == "sleep":
+                    await sleep(int(value))
+                elif action == "display":
+                    await self.display_game(game, reaction.message)
 
-            await reaction.message.clear_reactions()
-            await reaction.message.edit(content=game.view_game())
+            await self.display_game(game, reaction.message)
 
-            for emoji in game.get_state_reactions():
-                await reaction.message.add_reaction(emoji)
+    async def display_game(self, game, message):
+        await message.clear_reactions()
+        await message.edit(content=game.view_game())
 
+        for emoji in game.get_state_reactions():
+            await message.add_reaction(emoji)
 
 
 client = MyClient()
