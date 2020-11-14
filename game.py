@@ -4,7 +4,7 @@ from asyncio import sleep
 from random import choice
 
 from room import get_rooms
-from emoji import fish
+from emoji import fish, gold
 
 def code_block(text):
     """ Put backticks around string """
@@ -17,6 +17,8 @@ class Game():
     def __init__(self):
         self.rooms = get_rooms()
         self.current_room = "pond"
+
+        self.found_gold = False
 
         # Fishing stuff
         self.fishing = False
@@ -93,6 +95,9 @@ class MyClient(discord.Client):
                     await sleep(int(value))
                 elif action == "display":
                     await self.display_game(game, reaction.message)
+                elif action == "gold":
+                    game.hooked_fish = gold
+                    game.found_gold = True
                 elif action == "fishing":
                     if value == "start":
                         game.fishing = True
@@ -132,4 +137,4 @@ class MyClient(discord.Client):
 
 
 client = MyClient()
-client.run('')
+client.run('Nzc2ODc0NzgzNzE5NTU1MDgy.X67PBg.1czQZaUsK_OXtWplKr7jKV6MMTQ')

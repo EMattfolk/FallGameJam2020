@@ -96,14 +96,40 @@ def pond_view(state, game):
     elif state in ["fishing-wait", "fishing-bite"]:
         return "You pick up the fishing pole and cast the bobber into the pond.\n\nThe bobber hits the water with a splash."
     elif state == "fishing-done":
+        if game.hooked_fish == gold:
+            if game.current_fish is None:
+                return f"You found {gold} (gold)!"
+            else:
+                return f"You found {gold} (gold)! Do you want to bring it instead of your current fish {game.current_fish}?"
         if game.hooked_fish == note:
             return "You found a note that reads 4918. Weird."
         if game.hooked_fish is None:
             return "You did not catch anything this time. Maybe the fish are sleeping?"
         if game.current_fish is not None:
-            return "You got a {}! Do you want to bring it instead of your current fish {}?"\
-                    .format(game.hooked_fish, game.current_fish)
+            if game.current_fish == gold:
+                return "You got a {}! Do you want to bring it instead of your gold {}?"\
+                        .format(game.hooked_fish, game.current_fish)
+            else:
+                return "You got a {}! Do you want to bring it instead of your current fish {}?"\
+                        .format(game.hooked_fish, game.current_fish)
         return "You got a {}!".format(game.hooked_fish)
+    elif state.startswith("safe"):
+        if game.found_gold:
+            return "The safe is already open"
+        if len(state) != 8:
+            text = "You approach the safe. The keypad has its keys vertically unlike a regular one. Who designed this thing?!"
+        else:
+            if state == "safe6969":
+                text = "'Hehe, that's the sex number' you think to yourself. Too bad the safe is still shut."
+            elif state == "safe1337":
+                text = "'This safe is stupid.' you think to yourself as you enter the most predictable number possible. The safe is still shut."
+            elif state == "safe0000":
+                text = "This safe had not received a factory reset recently it seems."
+            else:
+                text = "The safe remains shut."
+        if state != "safe":
+            text += "\n\nYou have entered: {}".format(state[4:])
+        return text
 
 def pond_actions(state, game):
     if state == "init":
@@ -113,7 +139,7 @@ def pond_actions(state, game):
     elif state in ["look", "default"]:
         return {
             left_arrow: ("Return to corridor", "room->corridor"),
-            safe: ("Open the safe", "state->default"),
+            safe: ("Open the safe", "state->safe"),
             fishing_pole: ("Fish", "fishing->start state->fishing-wait display-> sleep->6 fishing->check state->fishing-bite display-> sleep->2 fishing->check state->fishing-done"),
         }
     elif state == "fishing-wait":
@@ -131,14 +157,26 @@ def pond_actions(state, game):
             }
     elif state == "fishing-done":
         if game.hooked_fish is not None and game.hooked_fish != note:
-            ret = { accept: ("Bring fish", "fishing->keep fishing->finish state->default") }
+
+            fish_type = "fish"
+            if game.hooked_fish == gold:
+                fish_type = "gold"
+
+            ret = { accept: (f"Bring {fish_type}", "fishing->keep fishing->finish state->default") }
             if game.current_fish is not None:
-                ret[decline] = ("Leave fish", "fishing->finish state->default")
+                ret[decline] = (f"Leave {fish_type}", "fishing->finish state->default")
 
             return ret
         return {
             left_arrow: ("Return", "fishing->finish state->default"),
         }
+    elif state.startswith("safe"):
+        if len(state) == 8 or game.found_gold:
+            return { left_arrow: ("Return", "state->default") }
+        ret = { emoji: (f"Press {i}", f"state->{state}{i}") for i, emoji in enumerate(numbers) }
+        if state == "safe491":
+            ret[numbers[8]] = ("Press 8", "gold-> state->fishing-done")
+        return ret
 
 
 def get_rooms():
