@@ -89,11 +89,21 @@ def pond_view(state, game):
     elif state == "look":
         return "In the middle of one of the walls is a safe. It has a keypad beside it and the display seems to indicate the code consists of 4 numbers. You have no idea what the code might be, but randomly trying different combinations couldn't hurt right? Perhaps there is a clue somewhere..\n\nThere is also the door leading back to the corridor. You have a feeling going back is not a good idea yet."
     elif state == "default":
-        return "You are in the room with the pond. What do you want to do?"
+        text = "You are in the room with the pond. What do you want to do?"
+        if game.current_fish is not None:
+            text += "\n\nYou are currently holding a: {}".format(game.current_fish)
+        return text
     elif state in ["fishing-wait", "fishing-bite"]:
-        return "You pick up the fishing pole and throw it into the pond.\n\nThe bobber hits the water with a splash."
+        return "You pick up the fishing pole and cast the bobber into the pond.\n\nThe bobber hits the water with a splash."
     elif state == "fishing-done":
-        return "Current: {} Hooked: {}".format(game.current_fish, game.hooked_fish)
+        if game.hooked_fish == note:
+            return "You found a note that reads 4918. Weird."
+        if game.hooked_fish is None:
+            return "You did not catch anything this time. Maybe the fish are sleeping?"
+        if game.current_fish is not None:
+            return "You got a {}! Do you want to bring it instead of your current fish {}?"\
+                    .format(game.hooked_fish, game.current_fish)
+        return "You got a {}!".format(game.hooked_fish)
 
 def pond_actions(state, game):
     if state == "init":
@@ -120,9 +130,14 @@ def pond_actions(state, game):
                 hourglass: ("Reel in", "fishing->hook"),
             }
     elif state == "fishing-done":
+        if game.hooked_fish is not None and game.hooked_fish != note:
+            ret = { accept: ("Bring fish", "fishing->keep fishing->finish state->default") }
+            if game.current_fish is not None:
+                ret[decline] = ("Leave fish", "fishing->finish state->default")
+
+            return ret
         return {
-            accept: ("Bring fish", "fishing->keep fishing->finish state->default"),
-            decline: ("Leave fish", "fishing->finish state->default"),
+            left_arrow: ("Return", "fishing->finish state->default"),
         }
 
 
