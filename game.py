@@ -80,11 +80,11 @@ class MyClient(discord.Client):
         if emoji in game.get_state_reactions():
             game.execute_actions_for_emoji(emoji)
 
-        await reaction.message.clear_reaction(reaction.emoji)
-        await reaction.message.edit(content=game.view_game())
+            await reaction.message.clear_reactions()
+            await reaction.message.edit(content=game.view_game())
 
-        for emoji in game.get_state_reactions():
-            await reaction.message.add_reaction(emoji)
+            for emoji in game.get_state_reactions():
+                await reaction.message.add_reaction(emoji)
 
 
 
