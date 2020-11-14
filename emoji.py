@@ -1,0 +1,8 @@
+key1 = "🗝"
+key2 = "🔑"
+magnifying_glass = "🔍"
+left_arrow = "⬅"
+man_walking = "🚶‍♂️"
+man_running = "🏃‍♂️"
+fish = "🎣"
+safe = "🔓"

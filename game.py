@@ -19,15 +19,17 @@ class Game():
 
     def view_game(self):
         room = self.rooms[self.current_room]
-        state_text = room.view()
+        state_text = f(room.view())
 
-        if room.actions():
-            state_text += "\n"
+        #if not room.actions():
+        #    return state_text
 
+        state_text += "--------------------------------"
         for emoji, (desc, action) in room.actions().items():
             state_text += "\n{} {}".format(emoji, desc)
+        state_text += "\n--------------------------------"
 
-        return f(state_text)
+        return state_text
 
     def get_state_reactions(self):
         return list(self.rooms[self.current_room].actions().keys())
@@ -38,7 +40,6 @@ class Game():
         """
         _, actions = self.rooms[self.current_room].actions()[emoji]
         for action in actions.split():
-            print(action.split("->"))
             yield action.split("->")
 
     def set_room_state(self, state):
@@ -58,12 +59,10 @@ class MyClient(discord.Client):
             return
 
         if message.content == "!adventure":
-            await message.channel.send("Starting new game")
             new_game = Game()
-            game_msg = await message.channel.send(new_game.view_game())
+            game_msg = await message.channel.send("Starting game...")
 
-            for emoji in new_game.get_state_reactions():
-                await game_msg.add_reaction(emoji)
+            await self.display_game(new_game, game_msg)
 
             games[game_msg.id] = new_game
 
