@@ -5,6 +5,7 @@ from random import choice
 
 from room import get_rooms
 from emoji import fish, gold
+from app_token import token
 
 def code_block(text):
     """ Put backticks around string """
@@ -137,4 +138,4 @@ class MyClient(discord.Client):
 
 
 client = MyClient()
-client.run('Nzc2ODc0NzgzNzE5NTU1MDgy.X67PBg.1czQZaUsK_OXtWplKr7jKV6MMTQ')
+client.run(token)
