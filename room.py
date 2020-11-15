@@ -58,6 +58,20 @@ def corridor_view(state, game):
             text += "\n\nYou hear something behind you."
         if frame > 2:
             text += "\n\nYou turn around and see two red glowing eyes staring from the room you just came from."
+    elif state.startswith("return"):
+        frame = int(state[6])
+        if frame == 0:
+            return "As you enter the corridor you see the familiar beige walls stretching toward the other end. The door leading to the cube room is closed."
+        elif frame == 1:
+            return "You begin walking back through the corridor.\n\nMuch to your dismay, the other end does not seem to be coming any closer."
+        elif frame == 2:
+            return "You keep walking, determined to reach the other end, keeping your eyes fixed on the goal.\n\nBut each time you blink you get transported back in the corridor."
+        elif frame == 3:
+            return "This time you try keeping your eyes open by holding your eyelids with your fingers.\n\nAbout halfway through you hear a scratching sound. You flinch, and notice you have been transported back."
+        elif frame == 4:
+            return "You turn around to return to the pond and..\n\n..see the corridor extend far to the other side."
+        elif frame == 5:
+            return corridor_view("return4", game) + "\n\nYou quickly turn your head. A metal door is in your way."
 
         return text
 
@@ -79,8 +93,23 @@ def corridor_actions(state, game):
         return {
             man_running: ("RUN", "room->pond")
         }
-    else:
-        return {}
+    elif state.startswith("return"):
+        frame = int(state[6])
+        ret = {}
+        if frame == 0:
+            ret[man_walking] = ("Walk", "state->return1")
+        elif frame == 1:
+            ret[man_walking] = ("Keep walking", "state->return2")
+        elif frame == 2:
+            ret[man_walking] = ("Keep walking", "state->return3")
+
+        if frame > 0 and frame <= 3:
+            ret[left_arrow] = ("Return to pond", "state->return4 display-> sleep->4 state->return5")
+        elif frame == 5:
+            ret[key2] = ("Enter cube room(?)", "room->start")
+        return ret
+
+    return {}
 
 
 def pond_view(state, game):
@@ -130,6 +159,8 @@ def pond_view(state, game):
         if state != "safe":
             text += "\n\nYou have entered: {}".format(state[4:])
         return text
+    elif state == "confirm-return":
+        return "You grab the handle and you are just about to swing open the door when you remember the red glowing eyes.\n\nThe only way out seems to be through the corridor.\n\nAre you ready?"
 
 def pond_actions(state, game):
     if state == "init":
@@ -138,7 +169,7 @@ def pond_actions(state, game):
         }
     elif state in ["look", "default"]:
         return {
-            left_arrow: ("Return to corridor", "room->corridor"),
+            left_arrow: ("Return to corridor", "state->confirm-return"),
             safe: ("Open the safe", "state->safe"),
             fishing_pole: ("Fish", "fishing->start state->fishing-wait display-> sleep->6 fishing->check state->fishing-bite display-> sleep->2 fishing->check state->fishing-done"),
         }
@@ -177,6 +208,11 @@ def pond_actions(state, game):
         if state == "safe491":
             ret[numbers[8]] = ("Press 8", "gold-> state->fishing-done")
         return ret
+    elif state == "confirm-return":
+        return {
+            left_arrow: ("Enter corridor", "room->corridor state->return0"),
+            right_arrow: ("Stay at pond", "state->default"),
+        }
 
 
 def get_rooms():
