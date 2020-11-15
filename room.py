@@ -21,9 +21,29 @@ def start_view(state, game):
     elif state == "try":
         return "You reach for the handle, grabbing and pulling it towards you.\n\n*CRACK*\n\nThe handle falls apart, leaving you with a fading sense of hope. Looks like getting out won't be that easy.\n\nYou notice the room is not actually as dark as first noted."
     elif state == "default":
-        return "The room you are in is eerily plain. Beige paint covers the walls in this.. room.. which is more like a cube with two metal doors on either side.\n\nThere are no lights, yet, you can still see." 
+        return "The room you are in is eerily plain. Beige paint covers the walls in this.. room.. which is more like a cube with two metal doors on either side.\n\nThere are no lights, yet, you can still see."
     elif state == "retry":
         return "You reach for the handle once more, but the rusted pathetic handle laying on the floor will not be opening that door anytime soon."
+    elif state.startswith("finale"):
+        frame = int(state[6])
+        if frame == 0:
+            return "You enter the cube room very carefully, expecting the red eyes to show themselves.\n\nSure enough they do. And you, frozen in fear, can only watch as they approach floating in the air like a part of an invisible beast."
+        elif frame == 1:
+            text = "The invisible beast looks at you."
+            if game.current_fish is not None:
+                text += "\n\nBut more importantly, the beast is eyeing the {} in your hand."\
+                        .format(game.current_fish)
+            return text
+        elif frame == 2:
+            bait = state[7:]
+            if bait == "":
+                return "Since you did not have anything to distract the beast with, it attacks you.\n\nYou reflect on your life in your last moments. The regrets, the good times and the things you would have done diffe..."
+            else:
+                return f"You hold out the {game.current_fish} to the invisible beast.\n\nSuddenly the {game.current_fish} disappears and all that is left of the beast is a slimy door handle on the floor."
+    elif state == "bad-end":
+        return "Bad end.\n\nThank you for playing!\n\nMade by Erik Mattfolk at LiU Fall Game Jam 2020."
+    elif state == "good-end":
+        return "Using the slimy door handle (yuck!) you fix the broken door and escape!\n\nThe End.\n\nThank you for playing!\n\nMade by Erik Mattfolk at LiU Fall Game Jam 2020."
 
 def start_actions(state, game):
     if state == "init":
@@ -43,6 +63,24 @@ def start_actions(state, game):
         return {
             key2: ("Try opening the other door", "state->default room->corridor"),
         }
+    elif state.startswith("finale"):
+        frame = int(state[6])
+        if frame == 0:
+            return { ice: ("Stand still", "state->finale1") }
+        if frame == 1:
+            if game.current_fish is not None:
+                fish_type = "gold" if game.current_fish == gold else "fish"
+                return { game.current_fish: (f"Offer {fish_type}", f"state->finale2{fish_type}") }
+            else:
+                return { ice: ("Stand still", "state->finale2") }
+        if frame == 2:
+            bait = state[7:]
+            if bait == "":
+                return { dead: ("The end", "state->bad-end") }
+            else:
+                return { win: ("The end", "state->good-end") }
+    else:
+        return {}
 
 
 def corridor_view(state, game):
@@ -71,7 +109,7 @@ def corridor_view(state, game):
         elif frame == 4:
             return "You turn around to return to the pond and..\n\n..see the corridor extend far to the other side."
         elif frame == 5:
-            return corridor_view("return4", game) + "\n\nYou quickly turn your head. A metal door is in your way."
+            return corridor_view("return4", game) + "\n\nYou quickly turn your head. A metal door is blocking your way."
 
         return text
 
@@ -106,7 +144,7 @@ def corridor_actions(state, game):
         if frame > 0 and frame <= 3:
             ret[left_arrow] = ("Return to pond", "state->return4 display-> sleep->4 state->return5")
         elif frame == 5:
-            ret[key2] = ("Enter cube room(?)", "room->start")
+            ret[key2] = ("Enter cube room(?)", "room->start state->finale0")
         return ret
 
     return {}
