@@ -96,6 +96,7 @@ def corridor_view(state, game):
             text += "\n\nYou hear something behind you."
         if frame > 2:
             text += "\n\nYou turn around and see two red glowing eyes staring from the room you just came from."
+        return text
     elif state.startswith("return"):
         frame = int(state[6])
         if frame == 0:

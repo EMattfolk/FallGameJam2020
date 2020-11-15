@@ -17,7 +17,7 @@ class Game():
 
     def __init__(self):
         self.rooms = get_rooms()
-        self.current_room = "pond"
+        self.current_room = "start"
 
         self.found_gold = False
 
