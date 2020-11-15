@@ -18,6 +18,7 @@ class Game():
     def __init__(self):
         self.rooms = get_rooms()
         self.current_room = "start"
+        self.frame = 0
 
         self.found_gold = False
 
@@ -128,6 +129,7 @@ class MyClient(discord.Client):
                     elif value == "finish":
                         if game.hooked_fish is None and game.pond_fish is not None:
                             game.fish_left.append(game.pond_fish)
+                game.frame += 1
 
             await self.display_game(game, reaction.message)
 
@@ -135,7 +137,10 @@ class MyClient(discord.Client):
         await message.clear_reactions()
         await message.edit(content=game.view_game())
 
+        frame = game.frame
         for emoji in game.get_state_reactions():
+            if game.frame != frame:
+                break
             await message.add_reaction(emoji)
 
 
